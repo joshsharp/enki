@@ -1,6 +1,7 @@
 # Enki
 
-A Python+Qt Twitter desktop client using the streaming twitter endpoints. Tested on Windows but should work anywhere Qt does.
+A Python+Qt Twitter desktop client using the streaming twitter endpoints. Tested on Windows but should work anywhere Qt does. 
+[Screenshot](https://dl.dropboxusercontent.com/u/163883/enki.png)
 
 ### Setup
 
