@@ -8,24 +8,6 @@
     <script src="jquery.tmpl.min.js"></script>
     <script src="base.js"></script>
     
-    <script id="tmpl-status-tweet" type="text/x-jquery-tmpl">
-        <div class="tweet ${ type }" id="t${ id }">
-            <img class="avatar" src="%s"/>
-            <div class="inner"><span class="user">${ user.screen_name }</span> ${ text }
-                <div class="meta"><span class="time">Just now</span> from <span class="source">${ source }</span></div>
-            </div>
-        </div>
-    </script>
-    <script id="tmpl-status-retweet" type="text/x-jquery-tmpl">
-        <div class="tweet ${ type }" id="t${ id }">
-            <img class="avatar" src="%s"/>
-            <div class="inner rt">RT by <span class="user">${ user.screen_name }</span></div>
-            <div class="inner"><span class="user">${ retweeted_status.user.screen_name }</span> ${ retweeted_status.text }
-                <div class="meta"><span class="time">Just now</span> from <span class="source">${ retweeted_status.source }</span></div>
-            </div>
-        </div>
-    </script>
-    
 </head>
 <body>
 
@@ -48,9 +30,15 @@
         </div>
     </div>
 </div>
+<div id="replyto_bar" style="display:none">
+    <div class="inner">
+        <a href="javascript:cancelReply()" class="button-close">&times;</a>
+        <span></span>
+    </div>
+</div>
 <div id="top">
     <div class="top-inner">
-        <div id="replyto_bar" style="display:none">In reply to: <span></span></div>
+        
         <div class="status-wrapper"><textarea name="status" class="blur" id="status" rows="3"></textarea></div>
         
     </div>

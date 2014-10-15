@@ -16,75 +16,81 @@ class Connector(QObject):
         
     
     @Slot(str)
-    @Slot(str,int)
-    def tweet(self,tweet,id=None):
+    @Slot(str,str)
+    def tweet(self,tweet,replyid=None):
         params = {"status":tweet}
         
         if len(tweet) > 140:
             return False        
         if id:
-            params['in_reply_to_status_id'] = id
+            params['in_reply_to_status_id'] = replyid
         
         try:
-            result = api.api('http://api.twitter.com/1/statuses/update.json',self.token,
+            result = api.api('https://api.twitter.com/1.1/statuses/update.json',self.token,
                          params,http_method='POST')
         except e:
             print e
         else:
             self.sendJS.emit("onTweetSuccess();")
-        print "Connector tweet:", tweet, id, result
+        print "Connector tweet:", tweet, replyid, result
 
     @Slot(str,str)
     def dm(self,screen_name,text):
-        result = api.api('http://api.twitter.com/1/direct_messages/new.json', self.token,
+        result = api.api('http://api.twitter.com/1.1/direct_messages/new.json', self.token,
                          {"text":text,"screen_name":screen_name},http_method='POST')
         print "Connector DM:", screen_name, text, result
     
-    @Slot(int)
-    def fave(self,id):
-        result = api.api('http://api.twitter.com/1/favorites/create/%s.json' % id, self.token,
+    @Slot(str)
+    def retweet(self,id):
+        result = api.api('https://api.twitter.com/1.1/statuses/retweet/%s.json' % id, self.token,
+                         http_method='POST')
+        print "Connector retweet:", id, result
+    
+    @Slot(str)
+    def fave(self,str):
+        result = api.api('https://api.twitter.com/1.1/favorites/create/%s.json' % id, self.token,
                          http_method='POST')
         print "Connector fave:", id, result
     
-    @Slot(int)
+    @Slot(str)
     def unfave(self,id):
-        result = api.api('http://api.twitter.com/1/favorites/destroy/%s.json' % id, self.token,
+        result = api.api('https://api.twitter.com/1.1/favorites/destroy/%s.json' % id, self.token,
                          http_method='POST')
         print "Connector unfave:", id, result
         
     @Slot(str)
     def follow(self,screen_name):
-        result = api.api('http://api.twitter.com/1/friendships/create.json', self.token,
+        result = api.api('https://api.twitter.com/1.1/friendships/create.json', self.token,
                          {"screen_name":screen_name}, http_method='POST')
         print "Connector follow:", screen_name, result
     
     @Slot(str)
     def unfollow(self,screen_name):
-        result = api.api('http://api.twitter.com/1/friendships/destroy.json', self.token,
+        result = api.api('https://api.twitter.com/1.1/friendships/destroy.json', self.token,
                          {"screen_name":screen_name}, http_method='POST')
         print "Connector unfollow:", screen_name, result
         
     @Slot(str)
     def block(self,screen_name):
-        result = api.api('http://api.twitter.com/1/blocks/create.json', self.token,
+        result = api.api('http://api.twitter.com/1.1/blocks/create.json', self.token,
                          {"screen_name":screen_name}, http_method='POST')
         print "Connector block:", screen_name, result
     
     @Slot(str)
     def spam(self,screen_name):
-        result = api.api('http://api.twitter.com/1/report_spam.json', self.token,
+        result = api.api('https://api.twitter.com/1.1/report_spam.json', self.token,
                          {"screen_name":screen_name}, http_method='POST')
         print "Connector spam:", screen_name, result
         
     @Slot(int)
     def delete_tweet(self,id):
-        result = api.api('http://api.twitter.com/1/statuses/destroy/%s.json' % id, self.token,
+        result = api.api('https://api.twitter.com/1.1/statuses/destroy/%s.json' % id, self.token,
                          http_method='POST')
         print "Connector delete tweet:", id, result
     
     @Slot(int)
     def delete_dm(self,id):
-        result = api.api('http://api.twitter.com/1/direct_messages/destroy/%s.json' % id, self.token,
+        result = api.api('http://api.twitter.com/1.1/direct_messages/destroy/%s.json' % id, self.token,
                          http_method='POST')
         print "Connector delete dm:", id, result
         
@@ -96,3 +102,7 @@ class Connector(QObject):
     @Slot(int,int)
     def show_sys_menu(self,x,y):
         self.window.show_sys_menu(x,y)
+        
+    @Slot(str)
+    def log(self, log):
+        print log

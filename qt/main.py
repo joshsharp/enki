@@ -11,7 +11,7 @@ import sys, os
 import time
 import random, math, re
 import threading
-from twitter import stream, conf
+from twitter import stream, conf, endpoints
 from twitter.utils import relativetime
 from connector import Connector
 from qt.preview import PreviewDialog
@@ -25,37 +25,47 @@ class MainWindow(QMainWindow):
     username = 'joshsharp'
     
     
-    DM_TEMPLATE = """
+    DM_TEMPLATE = u"""
     <div class="dm" id="t%s"><img class="avatar" src="%s"/>
-        <div class="inner"><span class="user">%s</span> %s
+        <div class="inner"><div class="user block">%s</div> %s
             <div class="meta"><span class="time">%s</span></div>
         </div>
     </div>
     """
     
-    DM_FROM_TEMPLATE = """
+    DM_FROM_TEMPLATE = u"""
     <div class="dm" id="t%s"><img class="avatar" src="%s"/>
-        <div class="inner"><span class="user dm-to">%s</span> %s
+        <div class="inner"><div class="user block dm-to">%s</div> %s
             <div class="meta"><span class="time">%s</span></div>
         </div>
     </div>
     """
     
-    TWEET_TEMPLATE = """
-    <div class="tweet %s" id="t%s">
-        <img class="avatar" src="%s"/>
-        <div class="inner"><span class="user">%s</span> %s
-            <div class="meta"><span class="time">%s</span> from <span class="source">%s</span></div>
+    TWEET_TEMPLATE = u"""
+    <div class="tweet {klass}" id="t{id}">
+        <div class="left">
+            <img class="avatar" src="{avatar}"/>
+            <a href="javascript:setReply('{id}');" class="button-reply"><img src="im/reply.png" /></a>
+            <a href="javascript:retweet('{id}');" class="button-retweet"><img src="im/retweet.png" /></a>
+        </div>
+        <div class="inner"><div><a class="user" href="https://twitter.com/{username}" target="_blank">{username}</a></div>
+            <div class="content">{content}</div>
+            <div class="meta"><a class="time" href="https://twitter.com/{username}/status/{id}" target="_blank">{time}</a> from <span class="source">{source}</span></div>
         </div>
     </div>
     """
     
-    RETWEET_TEMPLATE = """
-    <div class="tweet" id="t%s">
-        <img class="avatar" src="%s"/>
-            <div class="inner rt">RT by <span class="user">%s</span></div>            
-            <div class="inner"><span class="user">%s</span> %s
-            <div class="meta"><span class="time">%s</span> from <span class="source">%s</span></div>
+    RETWEET_TEMPLATE = u"""
+    <div class="tweet" id="t{id}">
+        <div class="left">
+            <img class="avatar" src="{avatar}"/>
+            <a href="javascript:setReply('{id}');" class="button-reply"><img src="im/reply.png" /></a>
+            <a href="javascript:retweet('{id}');" class="button-retweet"><img src="im/retweet.png" /></a>
+        </div>
+        <div class="inner rt">RT by <a class="user" href="https://twitter.com/{rt_by}" target="_blank">{rt_by}</a></div>            
+            <div class="inner"><div><a class="user" href="https://twitter.com/{username}" target="_blank">{username}</a></div>
+            <div class="content">{content}</div>
+            <div class="meta"><a class="time" href="https://twitter.com/{username}/status/{id}" target="_blank">{time}</a> from <span class="source">{source}</span></div>
         </div>
     </div>
     """
@@ -131,8 +141,9 @@ class MainWindow(QMainWindow):
         menu.addAction("Settings")
         self.sys_menu = menu
     
-    def __init__(self):
+    def __init__(self, app_instance):
         QMainWindow.__init__(self,None)
+        self.app = app_instance
         self.setWindowTitle("Enki - joshsharp")
         self.widgets = {}
         self.layouts = {}
@@ -158,8 +169,7 @@ class MainWindow(QMainWindow):
         self.setup_layout()
         self.refreshReady.connect(self.refreshed)
         
-        
-        self.refresh()
+        self.stream()
         
         #return HttpResponse(response.read(),content_type='application/json')
         
@@ -181,12 +191,24 @@ class MainWindow(QMainWindow):
         d.activateWindow()
     
     def launch_link(self,url):
+        print url
         QDesktopServices.openUrl(url)
-       
+    
     def refresh(self):
+        
+        statuses = endpoints.home_timeline()
+        print statuses
+        
+        for status in statuses:
+            
+            self.refreshed(status)
+    
+    def stream(self):
                 
         self.streamtask = threading.Thread(target=stream.connect,args=[self.refreshReady])        
         self.streamtask.start()
+        self.backtask = threading.Thread(target=stream.home_timeline,args=[self.refreshReady])        
+        self.backtask.start()
         
         timer = QTimer(self)
         self.connect(timer, SIGNAL("timeout()"), self.update_times)
@@ -214,21 +236,25 @@ class MainWindow(QMainWindow):
         
         for url in entities.get('urls',[]):
             
-            text = text.replace(url['url'],'<a class="link" href="%s" target="_blank">%s</a>' % (url['expanded_url'],url['display_url']))
-        
-        
-        for url in entities.get('media',[]):
-            
-            text = text.replace(url['url'],'<a class="media" href="%s">%s</a>' % (url['expanded_url'],url['display_url']))
+            text = text.replace(url['url'],'<a class="link" href="%s" target="_blank" title="%s">%s</a>' % (url['expanded_url'],url['expanded_url'],url['display_url']))        
         
         for user in entities.get('user_mentions',[]):
-            text = text.replace("@%s" % user['screen_name'],'@<a class="username" href="javascript:;" target="_blank">%s</a>' % user['screen_name'],1)
-            text = text.replace("@%s" % user['screen_name'].lower(),'@<a class="username" href="javascript:;" target="_blank">%s</a>' % user['screen_name'],1)
+            text = text.replace("@%s" % user['screen_name'],
+                                '<a class="username" href="http://twitter.com/{username}" target="_blank">@{username}</a>'.format(username=user['screen_name']),1)
+            text = text.replace("@%s" % user['screen_name'].lower(),
+                                '<a class="username" href="http://twitter.com/{username}" target="_blank">@{username}</a>'.format(username=user['screen_name']),1)
             
         for hash in entities.get('hashtags',[]):
             text = text.replace('#%s' % hash['text'],'<a class="link hash" href="javascript:;" target="_blank">#%s</a>' % hash['text'])
         
+        for url in entities.get('media',[]):
+            
+            text = text.replace(url['url'],'<a class="media" href="%s">%s</a>' % (url['expanded_url'],url['display_url']))
+            text += '<a class="thumblink" href="%s" target="_blank"><img class="thumb" src="%s:small" /></a>' % (url['media_url'],url['media_url'])
+        
         text = text.replace("\n","<br/>")
+        
+        
         
         return text
     
@@ -277,12 +303,12 @@ class MainWindow(QMainWindow):
             if user['screen_name'] == conf.USERNAME:
                 mention = True
                 body = self.web_frame.findFirstElement("#timeline-mentions")
-                body.prependInside(self.TWEET_TEMPLATE % ('',tweet['id'],
-                                                  tweet['user']['profile_image_url'],
-                                                  tweet['user']['screen_name'],
-                                                  text,
-                                                  relativetime(tweet['created_at']),
-                                                  tweet['source']))
+                body.prependInside(self.TWEET_TEMPLATE.format(klass='',id=tweet['id'],
+                                                  avatar=tweet['user']['profile_image_url'],
+                                                  username=tweet['user']['screen_name'],
+                                                  content=text,
+                                                  time=relativetime(tweet['created_at']),
+                                                  source=tweet['source']))
                 break
             
         
@@ -290,16 +316,12 @@ class MainWindow(QMainWindow):
             t_class = 'mention'
         
         body = self.web_frame.findFirstElement("#timeline-home")
-        body.prependInside(self.TWEET_TEMPLATE % (t_class, tweet['id'],
-                                                  tweet['user']['profile_image_url'],
-                                                  tweet['user']['screen_name'],
-                                                  text,
-                                                  relativetime(tweet['created_at']),
-                                                  tweet['source']))
-        
-        
-        
-                
+        body.prependInside(self.TWEET_TEMPLATE.format(klass=t_class,id=tweet['id'],
+                                                  avatar=tweet['user']['profile_image_url'],
+                                                  username=tweet['user']['screen_name'],
+                                                  content=text,
+                                                  time=relativetime(tweet['created_at']),
+                                                  source=tweet['source']))
         
             
     
@@ -312,44 +334,50 @@ class MainWindow(QMainWindow):
         text = self.parse_text(tweet['retweeted_status']['text'],tweet['retweeted_status']['entities'])
         
         body = self.web_frame.findFirstElement("#timeline-home")
-        body.prependInside(self.RETWEET_TEMPLATE % (tweet['id'],
-                                                  tweet['retweeted_status']['user']['profile_image_url'],
-                                                  tweet['user']['screen_name'],
-                                                  tweet['retweeted_status']['user']['screen_name'],
-                                                  text,
-                                                  relativetime(tweet['created_at']),
-                                                  tweet['retweeted_status']['source'])) 
+        body.prependInside(self.RETWEET_TEMPLATE.format(id=tweet['id'],
+                                                  avatar=tweet['retweeted_status']['user']['profile_image_url'],
+                                                  rt_by=tweet['user']['screen_name'],
+                                                  username=tweet['retweeted_status']['user']['screen_name'],
+                                                  content=text,
+                                                  time=relativetime(tweet['created_at']),
+                                                  source=tweet['retweeted_status']['source'])) 
         
         
     def refreshed(self, data):
-        try:
-            tweet = json.loads(data)
-        except:
-            print "couldn't parse"
+        if type(data) is not dict:
+            try:
+                tweet = json.loads(data)
+            except:
+                return
+        
         else:
+            tweet = data        
+        
+        if tweet.get('direct_message'):
             
-            if tweet.get('direct_message'):
-                
-                self.display_dm(tweet)
+            self.display_dm(tweet)
+        
+        elif tweet.get('retweeted_status'):
             
-            elif tweet.get('retweeted_status'):
-                
-                self.display_retweet(tweet)
+            self.display_retweet(tweet)
+        
+        elif tweet.get('text'):
             
-            elif tweet.get('text'):
-                
-                self.display_tweet(tweet)
-                
-            else:
-                print "event: ", data
+            self.display_tweet(tweet)
+            
+        else:
+            print "event: ", data
         
     def closeEvent(self,e):
-        print 'closing'
+        
         settings = QSettings("Recursive", "Musca")
         
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState()) 
-        #self.streamtask = None
-        print self.tweets.keys()
         
+        print self.tweets.keys()
+        print 'closing'
+        self.streamtask._Thread__stop()
+        self.backtask._Thread__stop()
+        self.app.quit()
 

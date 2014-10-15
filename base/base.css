@@ -9,6 +9,7 @@ body {
 
 a {
     text-decoration:none;
+    outline: none;
 }
 
 #top {
@@ -36,9 +37,28 @@ a {
 }
 
 
+#replyto_bar {
+    position:fixed;
+    bottom:67px;
+    border-top:1px solid #bbb;
+    background: #ddd;
+    width:100%;
+    z-index:1001;
+}
+
+#replyto_bar .inner {
+    padding: 5px;
+    line-height: 16px;
+}
+
+#replyto_bar .button-close {
+    font-size: 20px;
+}
+
 .status-wrapper {
     display:block;
     background:#aa0000;
+    
 }
 
 #status {
@@ -178,9 +198,12 @@ a#tab-prefs {
     /* background-color:#fafdff; */
 }
 
-.avatar {
+.left {
     float:left;
     margin-right:10px;
+    width: 48px;
+}
+.avatar {
     width:48px;
     height:48px;
     border-radius:4px;
@@ -192,6 +215,11 @@ a#tab-prefs {
     color:#005eae;
     font-size:14px;
     line-height:20px;
+    
+}
+
+.user.block {
+    display: block;
 }
 
 .dm .inner, .tweet .inner {
@@ -217,14 +245,14 @@ a#tab-prefs {
     color:#306ca0;
 }
 
-.inner .link {
+.inner .link, .inner .media {
     text-decoration:none;
     font-weight:normal;
     color:#2780cd;
 }
 
 .inner .hash {
-    color:#377b00;
+    color:#252382;
 }
 
 .inner.rt {
@@ -245,4 +273,32 @@ a#tab-prefs {
 
 .link.hash {
     
+}
+
+.thumblink {
+    display: block;
+    max-height: 180px;
+    overflow: hidden;
+}
+
+.thumb {
+    max-width: 100%;
+    
+}
+
+.button-reply, .button-retweet {
+    float: left;
+    opacity: 0;
+}
+
+.tweet:hover .button-reply, .tweet:hover .button-retweet {
+    opacity: 0.7;
+}
+
+.button-reply:hover, .button-retweet:hover {
+    opacity: 1 !important;
+}
+
+.button-close {
+    float: right;
 }

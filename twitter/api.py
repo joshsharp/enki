@@ -5,6 +5,7 @@ import json
 from oauth import oauth
 import httplib
 from conf import CONSUMER_KEY, CONSUMER_SECRET, ACCESS_SECRET, ACCESS_KEY
+import requests
 
 signature_method = oauth.OAuthSignatureMethod_HMAC_SHA1()
 
@@ -17,7 +18,7 @@ def consumer():
 def connection():
 	#use a new connection every time to prevent breakage
 	#connection._connection = httplib.HTTPConnection('twitter.com')
-	return httplib.HTTPConnection('twitter.com')
+	return httplib.HTTPSConnection('twitter.com')
 
 def oauth_request(
 	url,
@@ -35,8 +36,12 @@ def oauth_request(
 
 def oauth_response(req):
 	con = connection()
-	con.request(req.http_method, req.to_url())
-	return con.getresponse().read()
+	print req.to_url()
+	if req.http_method == 'GET':
+		resp = requests.get(req.to_url())
+	else:
+		resp = requests.post(req.to_url())
+	return resp.content
 
 def get_unauthorized_token(signature_method=signature_method):
 	req = oauth.OAuthRequest.from_consumer_and_token(
@@ -68,13 +73,13 @@ def api(url, token, params = None, http_method='GET'):
 
     return json.loads(oauth_response(oauth_request(
         url, token, http_method=http_method, parameters=params
-    )))
+    )),encoding='utf-8')
 
 
 def is_authorized(token):
-	return api('http://twitter.com/account/verify_credentials.json',
+	return api('https://twitter.com/account/verify_credentials.json',
 		token)
 
 def tweet(token,message):
-    result = api('http://api.twitter.com/1/statuses/update.json',token,{"status":message},http_method="POST")
+    result = api('https://api.twitter.com/1.1/statuses/update.json',token,{"status":message},http_method="POST")
     return result

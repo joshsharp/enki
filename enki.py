@@ -7,9 +7,12 @@ from qt.main import MainWindow
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    w = MainWindow()
+    w = MainWindow(app)
     w.show()
     app.exec_()
     
+    print 'after exec'
+    
+    app.quit()
     sys.exit()
 

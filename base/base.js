@@ -1,5 +1,8 @@
 var initialStatus = "What's happening?"
 
+var currentTab = 'home';
+var replyID = null;
+
 $(function(){
     $('#timeline-dms').hide();
     $('#timeline-mentions').hide();
@@ -11,6 +14,7 @@ $(function(){
         $('#timeline-home').hide();
         $('#timeline-dms').show();
         $('#timeline-mentions').hide();
+        currentTab = 'dms';
     });
     $('#tab-home').click(function(){
         $('#tab-dms').removeClass('selected');
@@ -19,6 +23,7 @@ $(function(){
         $('#timeline-home').show();
         $('#timeline-dms').hide();
         $('#timeline-mentions').hide();
+        currentTab = 'home';
     });
     
     $('#tab-mentions').click(function(){
@@ -28,6 +33,7 @@ $(function(){
         $('#timeline-home').hide();
         $('#timeline-dms').hide();
         $('#timeline-mentions').show();
+        currentTab = 'mentions';
     });
     
     $('#status').val(initialStatus);
@@ -51,9 +57,22 @@ $(function(){
     
     $('#status').keydown(function(e){
         if (e.ctrlKey && e.keyCode == 13) {
+            if (currentTab == 'dms') {
+                //do something else - prevent tweets
+                
+                
+            } else {
+                
+                if (replyID != null) {
+                    reply(replyID,$(this).val());
+                    onTweetSuccess();
+                } else {
+                    
+                    tweet($(this).val());
+                    onTweetSuccess();
+                }
+            }
             
-            tweet($(this).val());
-            onTweetSuccess();
         }
     });
     
@@ -61,6 +80,9 @@ $(function(){
 
 function addTweet(tweet){
     $('#timeline-home').prepend(tweet);
+    if ($('#timeline-home .tweet').length > 300) {
+        $('#timeline-home .tweet').last().remove();
+    }
 }
 
 function addDM(tweet){
@@ -69,6 +91,9 @@ function addDM(tweet){
 
 function addMention(tweet){
     $('#timeline-mentions').prepend(tweet);
+    if ($('#timeline-mentions .tweet').length > 300) {
+        $('#timeline-mentions .tweet').last().remove();
+    }
 }
 
 function tweet(text){
@@ -77,6 +102,28 @@ function tweet(text){
 
 function onTweetSuccess(){
     $("#status").val('');
+    replyID = null;
+    $('#replyto_bar').hide();
+}
+
+function cancelReply(){
+    
+    onTweetSuccess();
+}
+
+function setReply(id){
+    //log('reply:');
+    //log(id);
+    replyID = id;
+    //
+    var original = $('#timeline-home #t' + id);
+    var otext = '<strong>' + $('.user',original).text() + ":</strong> " + $('.content',original).text()
+    //
+    $('#replyto_bar').show();
+    $('#replyto_bar span').html(otext);
+    $("#status").val('@' + $('.user',original).text() + ' ');
+    $("#status").focus();
+    $("#status")[0].selectionStart = $("#status")[0].selectionEnd = $("#status")[0].value.length;
 }
 
 function reply(id,text){
@@ -89,6 +136,10 @@ function dm(screen_name,text){
 
 function fave(id){
     window.connector.fave(id);
+}
+
+function retweet(id){
+    window.connector.retweet(id);
 }
 
 function unfave(id){

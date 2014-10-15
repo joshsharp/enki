@@ -3,10 +3,10 @@
 import json, time
 from oauth.oauth import OAuthRequest, OAuthSignatureMethod_HMAC_SHA1
 from datetime import datetime
-from hashlib import md5
 import random, math, re, urllib, urllib2
 from conf import CONSUMER_KEY, CONSUMER_SECRET, ACCESS_SECRET, ACCESS_KEY
 from utils import Token
+import endpoints
 
 STREAM_URL = "https://userstream.twitter.com/2/user.json"
 
@@ -58,4 +58,13 @@ def connect(signal):
             signal.emit(tweets[0])
             buffer = tweets[1]
     
+
+def home_timeline(signal):
+    statuses = endpoints.home_timeline()
+    
+    statuses = reversed(statuses)
+    
+    for status in statuses:
         
+        signal.emit(status)
+    
