@@ -55,6 +55,17 @@ class MainWindow(QMainWindow):
     </div>
     """
     
+    QUOTE_TEMPLATE = u"""
+    <div class="quote tweet {klass}" id="q{id}">
+        <div class="left">
+            <img class="avatar" src="{avatar}"/>
+        </div>
+        <div class="inner"><div><a class="user" href="https://twitter.com/{username}" target="_blank">{username}</a></div>
+            <div class="content">{content}</div>
+        </div>
+    </div>
+    """
+    
     RETWEET_TEMPLATE = u"""
     <div class="tweet" id="t{id}">
         <div class="left">
@@ -247,6 +258,9 @@ class MainWindow(QMainWindow):
         for hash in entities.get('hashtags',[]):
             text = text.replace('#%s' % hash['text'],'<a class="link hash" href="javascript:;" target="_blank">#%s</a>' % hash['text'])
         
+        
+        print "media: %s" % len(entities.get('media',[]))
+        
         for url in entities.get('media',[]):
             
             text = text.replace(url['url'],'<a class="media" href="%s">%s</a>' % (url['expanded_url'],url['display_url']))
@@ -315,6 +329,9 @@ class MainWindow(QMainWindow):
         if mention:
             t_class = 'mention'
         
+        if tweet.get('quoted_status',None):
+            text += self.display_quoted(tweet['quoted_status'])
+        
         body = self.web_frame.findFirstElement("#timeline-home")
         body.prependInside(self.TWEET_TEMPLATE.format(klass=t_class,id=tweet['id'],
                                                   avatar=tweet['user']['profile_image_url'],
@@ -333,6 +350,12 @@ class MainWindow(QMainWindow):
         
         text = self.parse_text(tweet['retweeted_status']['text'],tweet['retweeted_status']['entities'])
         
+        if tweet.get('quoted_status',None):
+            text += self.display_quoted(tweet['quoted_status'])
+        
+        if tweet['retweeted_status'].get('quoted_status',None):
+            text += self.display_quoted(tweet['quoted_status'])
+        
         body = self.web_frame.findFirstElement("#timeline-home")
         body.prependInside(self.RETWEET_TEMPLATE.format(id=tweet['id'],
                                                   avatar=tweet['retweeted_status']['user']['profile_image_url'],
@@ -341,7 +364,22 @@ class MainWindow(QMainWindow):
                                                   content=text,
                                                   time=relativetime(tweet['created_at']),
                                                   source=tweet['retweeted_status']['source'])) 
+    
+    def display_quoted(self,tweet):
+        self.tweets[tweet['id']] = tweet
+        #print tweet['id']
+        print self.tweets[tweet['id']]
+        #print "%s: %s" % (tweet['user']['screen_name'], tweet['text'])
         
+        text = self.parse_text(tweet['text'],tweet['entities'])
+        
+        body = self.web_frame.findFirstElement("#timeline-home")
+        return(self.QUOTE_TEMPLATE.format(klass='',id=tweet['id'],
+                                                  avatar=tweet['user']['profile_image_url'],
+                                                  username=tweet['user']['screen_name'],
+                                                  content=text,
+                                                  time=relativetime(tweet['created_at']),
+                                                  source=tweet['source']))
         
     def refreshed(self, data):
         if type(data) is not dict:

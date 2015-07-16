@@ -1,6 +1,7 @@
 body {
     font-family:Helvetica, Arial, sans-serif;
-    font-size:12px;
+    font-size:14px;
+    line-height: 18px;
     padding:0;
     margin:0;
     color:#222;
@@ -265,6 +266,22 @@ a#tab-prefs {
     background:url("im/dm_to.png") left center no-repeat;
 }
 
+.quote {
+    background: #eff0f4;
+    padding: 4px 6px;
+    margin-top: 10px;
+}
+
+.tweet .quote .left {
+    width:32px !important;
+}
+
+.quote .left .avatar {
+    width:32px;
+    height:32px;
+    border-radius:4px;
+}
+
 .inner.rt .user {
     display:inline;
     font-size:12px;
@@ -277,12 +294,13 @@ a#tab-prefs {
 
 .thumblink {
     display: block;
-    max-height: 180px;
-    overflow: hidden;
+    
 }
 
 .thumb {
-    max-width: 100%;
+    max-height: 300px;
+    max-width: 300px;
+    margin-top: 10px;
     
 }
 

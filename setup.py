@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from distutils.core import setup
+import qt, twitter
 import py2exe
 
 setup(
@@ -10,5 +11,6 @@ setup(
      
         }
     },
-    console=['main.py']
+    packages=['qt','twitter'],
+    windows=['enki.py']
 ) 
